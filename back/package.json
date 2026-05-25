@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "start": "node ./src/index.ts"
+  },
+  "type": "module",
+  "engines": {
+    "node": "24.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.11.0"
+  }
+}
