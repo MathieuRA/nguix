@@ -1,5 +1,5 @@
 const CACHE = {}
-const API = 'http://localhost:3001/api'
+const API = '/api'
 const fetch = (endpoint) => globalThis.fetch(`${API}${endpoint !== undefined ? `${endpoint}` : ''}`)
 let activeFilter = 'all';
 

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises"
 
-const SITES_AVAILABLE = '/etc/nginx/site-available'
-const SITES_ENABLED = '/etc/nginx/site-enable'
+const SITES_AVAILABLE = '/etc/nginx/sites-available'
+const SITES_ENABLED = '/etc/nginx/sites-enabled'
 
 function parseConf(content: string) {
     const serverName = content.match(/server_name\s+([^;]+);/)?.[1].trim().split(/\s+/) ?? [];
