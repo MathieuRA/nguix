@@ -77,6 +77,14 @@ body {
   margin-top: 2px;
 }
 
+.sidebar-version {
+  display: block;
+  font-size: 10px;
+  color: var(--border);
+  margin-top: 6px;
+  font-family: monospace;
+}
+
 nav a {
   display: flex;
   align-items: center;
