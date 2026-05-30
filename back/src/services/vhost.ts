@@ -22,20 +22,42 @@ function parseConf(content: string) {
 }
 
 export async function getVirtualHosts() {
-    const files = await fs.readdir(SITES_AVAILABLE)
+    const availableSites = await fs.readdir(SITES_AVAILABLE)
+    const enabledSites = await fs.readdir(SITES_ENABLED)
 
-    return Promise.all(files.map(async fileName => {
-        const [isEnabled, file] = await Promise.all([
-            fs.stat(`${SITES_ENABLED}/${fileName}`)
-                .then(() => true)
-                .catch(err => {
-                    if (err.code === 'ENOENT') {
-                        return false
-                    }
-                    throw err
-                }),
-            fs.readFile(`${SITES_AVAILABLE}/${fileName}`, 'utf8')
-        ])
-        return { ...parseConf(file), file: fileName, enabled: isEnabled }
-    }))
+    const enabledConf: Record<string, boolean> = {}
+
+    for (const fileName of enabledSites) {
+        const path = `${SITES_ENABLED}/${fileName}`
+        const fileStat = await fs.lstat(path)
+        if (!fileStat.isSymbolicLink()) {
+            console.log(`--- ${path} is not a symlink and get ignored ---`)
+            continue
+        }
+        const linkTo = await fs.readlink(path)
+        enabledConf[linkTo] = true
+    }
+
+    const confs = []
+    for (const fileName of availableSites) {
+        const path = `${SITES_AVAILABLE}/${fileName}`
+        const isEnabled = enabledConf[path] ?? false
+        delete enabledConf[path]
+
+        const fileContent = await fs.readFile(path, 'utf-8')
+        confs.push({ ...parseConf(fileContent), file: fileName, enabled: isEnabled })
+    }
+
+    if (Object.keys(enabledConf).length > 0) {
+        console.log(`--- detected some conf not in ${SITES_AVAILABLE} directory. Going to parse them ---`)
+        const paths = Object.keys(enabledConf)
+        for (const filePath of paths) {
+            console.log(`- ${filePath}`)
+            delete enabledConf[filePath]
+            const fileContent = await fs.readFile(filePath, 'utf8')
+            confs.push({ ...parseConf(fileContent), file: filePath.split('/').pop(), enabled: true })
+        }
+    }
+
+    return confs
 }
