@@ -1,8 +1,9 @@
 import fs from "node:fs/promises"
 import { Vhost } from "../classes/vhosts.ts";
+import { getEnv } from "../env.ts";
 
-const SITES_AVAILABLE = '/etc/nginx/sites-available'
-const SITES_ENABLED = '/etc/nginx/sites-enabled'
+const SITES_AVAILABLE = getEnv('SITES_AVAILABLE')
+const SITES_ENABLED = getEnv('SITES_ENABLED')
 
 export async function getVirtualHosts(): Promise<(Awaited<ReturnType<Vhost['getConf']>> & { enabled: boolean })[]> {
     const sitesEnabled = await fs.readdir(SITES_ENABLED)

@@ -1,6 +1,7 @@
 import http from 'node:http'
+import { getOptionalNumberEnv } from './env.ts'
 
-const PORT = 3001
+const PORT = getOptionalNumberEnv('PORT') ?? 3001
 
 let server: Readonly<http.Server> | undefined
 

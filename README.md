@@ -31,7 +31,9 @@ Browse, enable, disable and delete your server blocks from a clean interface —
 ## Getting started
 
 ```bash
-cd back && npm run start
+$ cd back
+$ cp sample.env .env
+$ npm run start
 ```
 
 Then open [http://localhost:3001](http://localhost:3001).
