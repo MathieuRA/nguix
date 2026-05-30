@@ -1,15 +1,15 @@
 import fs from "node:fs/promises"
-import { Vhost } from "../classes/vhosts.ts";
+import { Vhost } from "../classes/vhost.ts";
 import { getEnv } from "../env.ts";
 
 const SITES_AVAILABLE = getEnv('SITES_AVAILABLE')
 const SITES_ENABLED = getEnv('SITES_ENABLED')
 
-export async function getVirtualHosts(): Promise<(Awaited<ReturnType<Vhost['getConf']>> & { enabled: boolean })[]> {
+export async function getVirtualHosts(): Promise<(Vhost['conf'] & { enabled: boolean, file: string })[]> {
     const sitesEnabled = await fs.readdir(SITES_ENABLED)
     const sitesAvailable = await fs.readdir(SITES_AVAILABLE)
 
-    const confs: (Awaited<ReturnType<Vhost['getConf']>> & { enabled: boolean })[] = []
+    const confs: (Vhost['conf'] & { enabled: boolean, file: string })[] = []
     const parsedConfs = new Set()
 
     await Promise.all(sitesEnabled.map(async fileName => {
@@ -22,7 +22,7 @@ export async function getVirtualHosts(): Promise<(Awaited<ReturnType<Vhost['getC
         const originalPath = await vhost.linkTo()
         parsedConfs.add(originalPath)
 
-        confs.push({ ...(await vhost.getConf()), enabled: true })
+        confs.push({ ...vhost.conf, enabled: vhost.enabled, file: vhost.fileName })
     }))
 
     await Promise.all(sitesAvailable.map(async fileName => {
@@ -33,7 +33,7 @@ export async function getVirtualHosts(): Promise<(Awaited<ReturnType<Vhost['getC
         }
 
         const vhost = await Vhost.fromPath(path)
-        confs.push({ ...(await vhost.getConf()), enabled: false })
+        confs.push({ ...vhost.conf, enabled: vhost.enabled, file: vhost.fileName })
     }))
 
     return confs
