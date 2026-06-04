@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "start": "node --env-file=.env ./src/index.ts"
+    "start": "node --env-file=.env ./src/index.ts",
+    "test": "node --test src/tests/*.ts"
   },
   "type": "module",
   "engines": {
