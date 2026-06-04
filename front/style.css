@@ -85,6 +85,25 @@ body {
   font-family: monospace;
 }
 
+.sidebar-nginx-status {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.sidebar-nginx-status.badge-enabled {
+  background: rgba(52,211,153,0.1);
+  color: var(--green);
+}
+
+.sidebar-nginx-status.badge-disabled {
+  background: rgba(248,113,113,0.1);
+  color: var(--red);
+}
+
 nav a {
   display: flex;
   align-items: center;

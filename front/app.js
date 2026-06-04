@@ -82,7 +82,39 @@ async function renderVhosts() {
   }).join('');
 }
 
+async function getNginxHealth() {
+  const response = await fetch('/nginx/health')
+  const nginxHealth = await response.json()
+
+  return nginxHealth
+}
+
+async function renderNginxHealth() {
+  const health = await getNginxHealth()
+  const nginxStatusNode = document.getElementById('nginx-status')
+  let text = 'nginx: '
+
+  if (health.active === true) {
+    nginxStatusNode.classList.add('badge-enabled')
+    text = text.concat('running')
+  } else {
+    nginxStatusNode.classList.add('badge-disabled')
+    if (health.installed) {
+      text = text.concat('stopped')
+    } else {
+      text = text.concat('not installed')
+    }
+  }
+
+  nginxStatusNode.innerText = text
+}
+
 function render() {
+  // update nginxHealth every minute
+  renderNginxHealth().finally(() => {
+    setInterval(renderNginxHealth, 1000 * 60)
+  })
+
   renderVhosts().finally(() => {
     document.getElementById('container').removeAttribute('class')
   })
