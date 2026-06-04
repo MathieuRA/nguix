@@ -1,6 +1,6 @@
 # Nguix
 
-A lightweight web UI to manage nginx virtual hosts.
+A lightweight (less than 50KB) web UI to manage nginx virtual hosts.
 
 Browse, enable, disable and delete your server blocks from a clean interface — no CLI required.
 
