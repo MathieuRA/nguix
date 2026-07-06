@@ -43,6 +43,7 @@ export class Vhost {
     private readonly _fileName: string
     private readonly _enabled: boolean
     private readonly _conf: VhostConf
+    private readonly _id: string
 
     constructor(params: { path: string, symlink: boolean, conf: VhostConf }) {
         this._filePath = Object.freeze(params.path)
@@ -50,6 +51,7 @@ export class Vhost {
         this._fileName = Object.freeze(params.path.split('/').pop() ?? '_unknown_')
         this._enabled = Object.freeze(this._symlink)
         this._conf = Object.freeze(params.conf)
+        this._id = Object.freeze(Buffer.from(params.conf.domain).toString('base64'))
     }
 
     get filePath() {
@@ -73,6 +75,10 @@ export class Vhost {
      */
     get conf() {
         return this._conf
+    }
+
+    get id() {
+        return this._id
     }
 
     linkTo() {

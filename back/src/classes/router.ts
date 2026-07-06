@@ -2,44 +2,107 @@ import type http from 'node:http'
 import { ApiResponse } from './response.ts'
 import { serveStatic } from '../static.ts'
 
-type HttpCallback = (request: http.IncomingMessage, response: http.ServerResponse) => void | ApiResponse | Promise<void | ApiResponse>
+// @ts-ignore
+type HttpCallback = (params: { request: http.IncomingMessage, response: http.ServerResponse, [key: string]: number | string }) => void | ApiResponse | Promise<void | ApiResponse>
+type HttpVerb = 'get' | 'patch'
+type RouteConfig = {
+    path: string
+    callback: HttpCallback
+    method: HttpVerb,
+}
+const HTTP_VERB: HttpVerb[] = ['get', 'patch']
 
 const BASE_PATH = '/api'
+
+/**
+ * 
+ * GET: {
+ *  vhost/
+ *  vhost/:id
+ * }
+ * 
+ */
 
 export class Router {
     constructor() {
         this.setupMiddleware = this.setupMiddleware.bind(this)
+        // @ts-ignore initialize the variable
+        const routes: Record<HttpVerb, {}> = {}
+        HTTP_VERB.forEach(verb => {
+            routes[verb] = {}
+        })
+        // @ts-ignore initialize the context
+        this.routesByVerb = { ...routes }
     }
 
     /**
-     * routes by pathname
+     * Routes by verb
      */
-    private routes: Record<string, {
-        path: string
-        callback: HttpCallback
-        method: 'get',
-    }> = {}
+    private routesByVerb: Record<HttpVerb, Record<string, RouteConfig>>
+    #addRoute(newRoute: { method: HttpVerb, callback: HttpCallback, path: string }) {
+        const routes = this.routesByVerb[newRoute.method]
+        let route = routes[newRoute.path]
 
-    #addRoute(newRoute: { method: 'get', callback: HttpCallback, path: string }) {
-        const pathname = BASE_PATH + newRoute.path
-        const route = this.routes[pathname]
-
+        newRoute.path = BASE_PATH + newRoute.path
         if (route !== undefined) {
-            // TODO: handle same route on different http verb
             throw new Error(`route ${newRoute.path} already exist`)
         }
 
-        this.routes[pathname] = newRoute
+        this.routesByVerb[newRoute.method][newRoute.path] = newRoute
+    }
+
+    #matchRoute(key: string, pathname: string) {
+        const paramNames: string[] = []
+
+        const regexPattern = key.replace(/:([^/]+)/g, (_, name) => {
+            paramNames.push(name)
+            return "([^/]+)"
+        })
+
+        const regex = new RegExp(`^${regexPattern}$`)
+        const match = pathname.match(regex)
+
+        if (!match) {
+            return null
+        }
+
+        const params = Object.fromEntries(
+            paramNames.map((name, index) => [name, isFinite(+match[index + 1]) ? +match[index + 1] : match[index + 1]])
+        )
+
+        return params
     }
 
     get(path: string, callback: HttpCallback) {
         this.#addRoute({ method: 'get', callback, path })
     }
 
+    patch(path: string, callback: HttpCallback) {
+        this.#addRoute({ method: 'patch', callback, path })
+    }
 
     async setupMiddleware(req: http.IncomingMessage, res: http.ServerResponse) {
         const url = new URL(req.url ?? '/', 'http://localhost')
-        const route = this.routes[url.pathname]
+        if (req.method === undefined) {
+            throw new Error('Cannot detect the HTTP verb for the request')
+        }
+
+        const routes = this.routesByVerb[req.method.toLowerCase() as HttpVerb]
+        let route = routes[url.pathname]
+        let queries: { [key: string]: (string | number) } = {}
+
+        if (route === undefined) {
+            const allKeys = Object.keys(routes)
+            for (const key of allKeys) {
+                const match = this.#matchRoute(key, url.pathname)
+                if (match !== null) {
+                    route = routes[key]
+                    queries = match
+                    break
+                }
+            }
+        }
+
 
         if (route === undefined) {
             const staticRoot = process.env.STATIC_ROOT ?? '../front'
@@ -48,7 +111,8 @@ export class Router {
             return
         }
 
-        const result = await route.callback(req, res)
+        // @ts-ignore
+        const result = await route.callback({ request: req, response: res, ...queries })
         if (res.headersSent) {
             return
         }

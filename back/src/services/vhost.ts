@@ -5,11 +5,11 @@ import { getEnv } from "../env.ts";
 const SITES_AVAILABLE = getEnv('SITES_AVAILABLE')
 const SITES_ENABLED = getEnv('SITES_ENABLED')
 
-export async function getVirtualHosts(): Promise<(Vhost['conf'] & { enabled: boolean, file: string })[]> {
+export async function getVirtualHosts(): Promise<(Vhost['conf'] & { enabled: boolean, file: string, id: string })[]> {
     const sitesEnabled = await fs.readdir(SITES_ENABLED)
     const sitesAvailable = await fs.readdir(SITES_AVAILABLE)
 
-    const confs: (Vhost['conf'] & { enabled: boolean, file: string })[] = []
+    const confs: (Vhost['conf'] & { enabled: boolean, file: string, id: string })[] = []
     const parsedConfs = new Set()
 
     await Promise.all(sitesEnabled.map(async fileName => {
@@ -22,7 +22,7 @@ export async function getVirtualHosts(): Promise<(Vhost['conf'] & { enabled: boo
         const originalPath = await vhost.linkTo()
         parsedConfs.add(originalPath)
 
-        confs.push({ ...vhost.conf, enabled: vhost.enabled, file: vhost.fileName })
+        confs.push({ ...vhost.conf, enabled: vhost.enabled, file: vhost.fileName, id: vhost.id })
     }))
 
     await Promise.all(sitesAvailable.map(async fileName => {
@@ -33,8 +33,20 @@ export async function getVirtualHosts(): Promise<(Vhost['conf'] & { enabled: boo
         }
 
         const vhost = await Vhost.fromPath(path)
-        confs.push({ ...vhost.conf, enabled: vhost.enabled, file: vhost.fileName })
+        confs.push({ ...vhost.conf, enabled: vhost.enabled, file: vhost.fileName, id: vhost.id })
     }))
 
     return confs
+}
+
+export async function getVirtualHost(id: Vhost['id']): Promise<Awaited<ReturnType<typeof getVirtualHosts>>[number]> {
+    const vhosts = await getVirtualHosts()
+    const vhost = vhosts.find(vhost => vhost.id === id)
+
+    if (vhost === undefined) {
+        throw new Error('not found')
+    }
+
+    return vhost
+
 }
