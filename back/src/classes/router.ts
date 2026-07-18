@@ -3,7 +3,7 @@ import { ApiResponse } from './response.ts'
 import { serveStatic } from '../static.ts'
 
 // @ts-ignore
-type HttpCallback = (params: { request: http.IncomingMessage, response: http.ServerResponse, [key: string]: number | string }) => void | ApiResponse | Promise<void | ApiResponse>
+type HttpCallback = (params: { request: http.IncomingMessage, response: http.ServerResponse, [key: string]: number | string, body: <T> (req: http.IncomingMessage) => Promise<T> }) => void | ApiResponse | Promise<void | ApiResponse>
 type HttpVerb = 'get' | 'patch'
 type RouteConfig = {
     path: string
@@ -73,6 +73,16 @@ export class Router {
         return params
     }
 
+    async #body<T>(req: http.IncomingMessage): Promise<T> {
+        const chunks: Buffer[] = []
+
+        for await (const chunk of req) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+        }
+
+        return JSON.parse(Buffer.concat(chunks).toString("utf8"))
+    }
+
     get(path: string, callback: HttpCallback) {
         this.#addRoute({ method: 'get', callback, path })
     }
@@ -112,7 +122,7 @@ export class Router {
         }
 
         // @ts-ignore
-        const result = await route.callback({ request: req, response: res, ...queries })
+        const result = await route.callback({ request: req, response: res, ...queries, body: this.#body })
         if (res.headersSent) {
             return
         }

@@ -8,13 +8,13 @@ export const router = Object.freeze(new Router())
 
 router.get('/vhosts', async () => {
     const vHosts = await getVirtualHosts()
-    return new ApiResponse({ data: vHosts })
+    return new ApiResponse({ data: vHosts.map(host => host.toJSON()) })
 })
 
-router.patch('/vhosts/:id', async ({ id }) => {
-    const vhost = await getVirtualHost(id as string)
+router.patch('/vhosts/:id', async ({ id, request, body }) => {
+    const vhost = await getVirtualHost(decodeURIComponent(id as string))
 
-    console.log({ vhost })
+    vhost.update(await body(request))
     return new ApiResponse({ status: 204 })
 })
 

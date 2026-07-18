@@ -1,6 +1,6 @@
 const CACHE = {}
 const API = '/api'
-const fetch = (endpoint) => globalThis.fetch(`${API}${endpoint !== undefined ? `${endpoint}` : ''}`)
+const fetch = (endpoint, opts) => globalThis.fetch(`${API}${endpoint !== undefined ? `${endpoint}` : ''}`, opts)
 let activeFilter = 'all';
 
 
@@ -11,9 +11,9 @@ function setFilter(el) {
   renderVhosts();
 }
 
-async function getVhosts() {
+async function getVhosts(opts) {
   // TODO: handle cache expiration
-  if (CACHE['vhosts'] === undefined) {
+  if (CACHE['vhosts'] === undefined || opts.bypassCache) {
     const response = await fetch('/vhosts')
     const vhosts = await response.json()
 
@@ -23,16 +23,24 @@ async function getVhosts() {
   return CACHE['vhosts']
 }
 
-async function toggleVhost(value) {
-  alert(value)
+async function toggleVhost(id, value) {
+  const resp = await fetch(`/vhosts/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      enabled: value,
+    }),
+  })
 
-  await renderVhosts()
+  await renderVhosts({ bypassCache: true })
 }
 
-async function renderVhosts() {
+async function renderVhosts(opts) {
   const query = document.getElementById('search').value.toLowerCase();
 
-  const vhosts = await getVhosts()
+  const vhosts = await getVhosts(opts)
   const filtered = vhosts.filter(function (v) {
     if (activeFilter === 'enabled' && !v.enabled) return false;
     if (activeFilter === 'disabled' && v.enabled) return false;
@@ -56,31 +64,32 @@ async function renderVhosts() {
   }
 
   tbody.innerHTML = filtered.map(function (vhost) {
-    var sslCell = vhost.sslExpiry !== undefined
+    var sslCell = vhost.conf.sslExpiry !== undefined
       ? '<span class="ssl-tag">'
       + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
-      + new Date(vhost.sslExpiry).toDateString()
+      + new Date(vhost.conf.sslExpiry).toDateString()
       + '</span>'
       : '<span class="ssl-tag no-ssl">—</span>';
 
-    var aliasCell = vhost.aliases.length
-      ? '<div class="domain-alias">' + vhost.aliases.join(', ') + '</div>'
+    var aliasCell = vhost.conf.aliases.length
+      ? '<div class="domain-alias">' + vhost.conf.aliases.join(', ') + '</div>'
       : '';
 
     return '<tr>'
-      + '<td><div class="domain">' + vhost.domain + '</div>' + aliasCell + '</td>'
-      + '<td>' + vhost.port + '</td>'
+      + '<td><div class="domain">' + vhost.conf.domain + '</div>' + aliasCell + '</td>'
+      + '<td>' + vhost.conf.port + '</td>'
       + '<td>' + sslCell + '</td>'
       + '<td><span class="badge badge-' + (vhost.enabled ? 'enabled' : 'disabled') + '">' + (vhost.enabled ? 'enabled' : 'disabled') + '</span></td>'
-      + '<td style="font-family: monospace; font-size: 12px; color: var(--text-muted)">' + vhost.file + '</td>'
+      + '<td style="font-family: monospace; font-size: 12px; color: var(--text-muted)">' + vhost.fileName + '</td>'
       + '<td><div class="actions">'
-      + '<button class="icon-btn" title="Edit" onclick="alert(\'Edit ' + vhost.domain + '\')">'
+      + '<button class="icon-btn" title="Edit" onclick="alert(\'Edit ' + vhost.conf.domain + '\')">'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
       + '</button>'
-      + '<button class="icon-btn" title="' + (vhost.enabled ? 'Disable' : 'Enable') + '" onclick="toggleVhost(' + !vhost.enabled + ')">'
+      + '<button class="icon-btn" title="' + (vhost.enabled ? 'Disable' : 'Enable') + '" onclick="toggleVhost(' + `'${vhost.id}', ${!vhost.enabled}` + ')">'
+      // + '<button class="icon-btn" title="' + (vhost.enabled ? 'Disable' : 'Enable') + '" onclick="toggleVhost("' + vhost.id + '",' + !vhost.enabled + ')">'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>'
       + '</button>'
-      + '<button class="icon-btn danger" title="Delete" onclick="alert(\'Delete ' + vhost.domain + '\')">'
+      + '<button class="icon-btn danger" title="Delete" onclick="alert(\'Delete ' + vhost.conf.domain + '\')">'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>'
       + '</button>'
       + '</div></td>'

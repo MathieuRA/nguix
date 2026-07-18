@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import crypto from 'node:crypto'
+import { getEnv } from "../env.ts";
 
 type VhostConf = { domain: string, aliases: string[], port: number, ssl: boolean, sslExpiry?: Date, proxy?: string }
 
@@ -83,5 +84,49 @@ export class Vhost {
 
     linkTo() {
         return fs.readlink(this.filePath)
+    }
+
+    toJSON() {
+        return {
+            conf: this._conf,
+            enabled: this.enabled,
+            filePath: this.filePath,
+            fileName: this.fileName,
+            id: this.id,
+            isSymlink: this.isSymlink,
+        }
+    }
+
+    async update({ enabled }: { enabled?: Vhost['enabled'] }) {
+        const promises = []
+        if (enabled !== undefined) {
+            if (enabled !== this.enabled) {
+                promises.push(enabled ? this.#enable() : this.#disable())
+            }
+        }
+
+        const results = await Promise.allSettled(promises)
+        const failedUpdates = results.filter(result => result.status === 'rejected')
+
+        if (failedUpdates.length === 0) {
+            return
+        }
+        if (failedUpdates.length === results.length) {
+            throw new Error('update failed')
+        }
+
+        throw new Error("update partially applied")
+    }
+
+    async #enable() {
+        await fs.symlink(this.filePath, `${getEnv('SITES_ENABLED')}/${this.fileName}`, 'file')
+    }
+
+    async #disable() {
+        if (this.isSymlink) {
+            await fs.unlink(this.filePath)
+        } else {
+            console.error('trying to unlink a non symlink', this)
+        }
     }
 }

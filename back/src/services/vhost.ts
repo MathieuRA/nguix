@@ -5,11 +5,11 @@ import { getEnv } from "../env.ts";
 const SITES_AVAILABLE = getEnv('SITES_AVAILABLE')
 const SITES_ENABLED = getEnv('SITES_ENABLED')
 
-export async function getVirtualHosts(): Promise<(Vhost['conf'] & { enabled: boolean, file: string, id: string })[]> {
+export async function getVirtualHosts(): Promise<Vhost[]> {
     const sitesEnabled = await fs.readdir(SITES_ENABLED)
     const sitesAvailable = await fs.readdir(SITES_AVAILABLE)
 
-    const confs: (Vhost['conf'] & { enabled: boolean, file: string, id: string })[] = []
+    const confs: Vhost[] = []
     const parsedConfs = new Set()
 
     await Promise.all(sitesEnabled.map(async fileName => {
@@ -22,7 +22,7 @@ export async function getVirtualHosts(): Promise<(Vhost['conf'] & { enabled: boo
         const originalPath = await vhost.linkTo()
         parsedConfs.add(originalPath)
 
-        confs.push({ ...vhost.conf, enabled: vhost.enabled, file: vhost.fileName, id: vhost.id })
+        confs.push(vhost)
     }))
 
     await Promise.all(sitesAvailable.map(async fileName => {
@@ -33,13 +33,15 @@ export async function getVirtualHosts(): Promise<(Vhost['conf'] & { enabled: boo
         }
 
         const vhost = await Vhost.fromPath(path)
-        confs.push({ ...vhost.conf, enabled: vhost.enabled, file: vhost.fileName, id: vhost.id })
+        confs.push(vhost)
     }))
 
     return confs
 }
 
 export async function getVirtualHost(id: Vhost['id']): Promise<Awaited<ReturnType<typeof getVirtualHosts>>[number]> {
+    // TODO: create a in-memory collection (no need DB for now)
+    // to avoid listing each host when we just need one
     const vhosts = await getVirtualHosts()
     const vhost = vhosts.find(vhost => vhost.id === id)
 
