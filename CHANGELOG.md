@@ -11,4 +11,4 @@
 
 ## Fixes
 
-- Don't crash the app if `SITES_AVAILABLE` or `SITES_ENABLED` point to a non existing dir
+- Don't crash the app if `SITES_AVAILABLE` or `SITES_ENABLED` point to a non existing dir (PR [#3](https://github.com/MathieuRA/nguix/pull/3))
