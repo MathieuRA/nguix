@@ -11,7 +11,7 @@ function setFilter(el) {
   renderVhosts();
 }
 
-async function getVhosts(opts) {
+async function getVhosts(opts = {}) {
   // TODO: handle cache expiration
   if (CACHE['vhosts'] === undefined || opts.bypassCache) {
     const response = await fetch('/vhosts')
@@ -32,6 +32,17 @@ async function toggleVhost(id, value) {
     body: JSON.stringify({
       enabled: value,
     }),
+  })
+
+  await renderVhosts({ bypassCache: true })
+}
+
+async function destroyVhost(id) {
+  const vhost = (await getVhosts()).find(vhost => vhost.id === id)
+  confirm(`Are you sure you want to destroy the vhost: ${vhost.conf.domain}`)
+
+  await fetch(`/vhosts/${encodeURIComponent(id)}`, {
+    method: 'DELETE'
   })
 
   await renderVhosts({ bypassCache: true })
@@ -86,10 +97,9 @@ async function renderVhosts(opts) {
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
       + '</button>'
       + '<button class="icon-btn" title="' + (vhost.enabled ? 'Disable' : 'Enable') + '" onclick="toggleVhost(' + `'${vhost.id}', ${!vhost.enabled}` + ')">'
-      // + '<button class="icon-btn" title="' + (vhost.enabled ? 'Disable' : 'Enable') + '" onclick="toggleVhost("' + vhost.id + '",' + !vhost.enabled + ')">'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>'
       + '</button>'
-      + '<button class="icon-btn danger" title="Delete" onclick="alert(\'Delete ' + vhost.conf.domain + '\')">'
+      + '<button class="icon-btn danger" title="Destroy" onclick="destroyVhost(' + `'${vhost.id}'` + ')">'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>'
       + '</button>'
       + '</div></td>'

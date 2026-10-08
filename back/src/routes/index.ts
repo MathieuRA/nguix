@@ -11,6 +11,13 @@ router.get('/vhosts', async () => {
     return new ApiResponse({ data: vHosts.map(host => host.toJSON()) })
 })
 
+router.delete('/vhosts/:id', async ({ id }) => {
+    const vhost = await getVirtualHost(decodeURIComponent(id as string))
+    await vhost.destroy()
+
+    return new ApiResponse({ status: 204 })
+})
+
 router.patch('/vhosts/:id', async ({ id, request, body }) => {
     const vhost = await getVirtualHost(decodeURIComponent(id as string))
 
