@@ -39,7 +39,8 @@ export class Vhost {
         return { domain, aliases, port, ssl, sslExpiry, proxy };
     }
 
-    private readonly _filePath: string
+    /** null if the sym link doesn't exist anymore. (e.g. after a disable call) */
+    private _filePath: string | null
     private readonly _symlink: boolean
     private readonly _fileName: string
     private readonly _enabled: boolean
@@ -47,7 +48,7 @@ export class Vhost {
     private readonly _id: string
 
     constructor(params: { path: string, symlink: boolean, conf: VhostConf }) {
-        this._filePath = Object.freeze(params.path)
+        this._filePath = params.path
         this._symlink = Object.freeze(params.symlink)
         this._fileName = Object.freeze(params.path.split('/').pop() ?? '_unknown_')
         this._enabled = Object.freeze(this._symlink)
@@ -83,6 +84,13 @@ export class Vhost {
     }
 
     linkTo() {
+        if (!this.isSymlink) {
+            throw new Error('not a symlink')
+        }
+        if (this.filePath === null) {
+            throw new Error('not an active symlink')
+        }
+
         return fs.readlink(this.filePath)
     }
 
@@ -118,13 +126,33 @@ export class Vhost {
         throw new Error("update partially applied")
     }
 
+    async destroy() {
+        const path = this.isSymlink ? await this.linkTo() : this.filePath!
+
+        if (this.enabled) {
+            await this.#disable()
+        }
+
+        await fs.rm(path)
+    }
+
     async #enable() {
-        await fs.symlink(this.filePath, `${getEnv('SITES_ENABLED')}/${this.fileName}`, 'file')
+        if (this.isSymlink) {
+            throw new Error('[enable vhost]: cannot enable a symlink')
+        }
+
+        await fs.symlink(this.filePath!, `${getEnv('SITES_ENABLED')}/${this.fileName}`, 'file')
     }
 
     async #disable() {
         if (this.isSymlink) {
+            if (this.filePath === null) {
+                console.warn('[disable vhost]: vhost already disabled')
+                return
+            }
+
             await fs.unlink(this.filePath)
+            this._filePath = null
         } else {
             console.error('trying to unlink a non symlink', this)
         }
