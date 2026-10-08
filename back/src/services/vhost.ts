@@ -1,11 +1,16 @@
 import fs from "node:fs/promises"
 import { Vhost } from "../classes/vhost.ts";
 import { getEnv } from "../env.ts";
+import { checkMainDirExist } from "../utils/dir.helper.ts";
 
 const SITES_AVAILABLE = getEnv('SITES_AVAILABLE')
 const SITES_ENABLED = getEnv('SITES_ENABLED')
 
 export async function getVirtualHosts(): Promise<Vhost[]> {
+    if (!checkMainDirExist()) {
+        return []
+    }
+
     const sitesEnabled = await fs.readdir(SITES_ENABLED)
     const sitesAvailable = await fs.readdir(SITES_AVAILABLE)
 

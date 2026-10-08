@@ -8,3 +8,7 @@
 - Display expiration date of SSL certificates (commit [48218](https://github.com/MathieuRA/nguix/commit/4821882d17b8cb7d23fdcdf9452b0d48e2884244))
 - Display `nginx.service` status(commit [852bd](https://github.com/MathieuRA/nguix/commit/852bd52e735687fa4b6855f3f41bba0eae322e2f))
 - Disable/Enable virtual hosts (commit [af4f6](https://github.com/MathieuRA/nguix/commit/af4f6578b05386e9ffab3aeb8a9a1d91ad0b10ed))
+
+## Fixes
+
+- Don't crash the app if `SITES_AVAILABLE` or `SITES_ENABLED` point to a non existing dir (PR [#3](https://github.com/MathieuRA/nguix/pull/3))
