@@ -4,13 +4,13 @@ import { serveStatic } from '../static.ts'
 
 // @ts-ignore
 type HttpCallback = (params: { request: http.IncomingMessage, response: http.ServerResponse, [key: string]: number | string, body: <T> (req: http.IncomingMessage) => Promise<T> }) => void | ApiResponse | Promise<void | ApiResponse>
-type HttpVerb = 'get' | 'delete' | 'patch'
+type HttpVerb = 'get' | 'post' | 'delete' | 'patch'
 type RouteConfig = {
     path: string
     callback: HttpCallback
     method: HttpVerb,
 }
-const HTTP_VERB: HttpVerb[] = ['get', 'delete', 'patch']
+const HTTP_VERB: HttpVerb[] = ['get', 'post', 'delete', 'patch']
 
 const BASE_PATH = '/api'
 
@@ -85,6 +85,10 @@ export class Router {
 
     get(path: string, callback: HttpCallback) {
         this.#addRoute({ method: 'get', callback, path })
+    }
+
+    post(path: string, callback: HttpCallback) {
+        this.#addRoute({ method: 'post', callback, path })
     }
 
     delete(path: string, callback: HttpCallback) {
