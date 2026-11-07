@@ -1,10 +1,96 @@
 import fs from "node:fs/promises"
+import path from "node:path"
 import { Vhost } from "../classes/vhost.ts";
 import { getEnv } from "../env.ts";
 import { checkMainDirExist } from "../utils/dir.helper.ts";
 
 const SITES_AVAILABLE = getEnv('SITES_AVAILABLE')
 const SITES_ENABLED = getEnv('SITES_ENABLED')
+
+export type CreateVhostInput = {
+    domain: string
+    aliases?: string[]
+    port: number
+    enabled: boolean
+    root?: string
+    proxy?: string
+}
+
+function normalizeAliases(aliases: string[] = []) {
+    return Array.from(new Set(
+        aliases
+            .flatMap(alias => alias.split(','))
+            .map(alias => alias.trim())
+            .filter(Boolean)
+            .map(alias => alias.replace(/^https?:\/\//, ''))
+            .map(alias => alias.replace(/\/$/, ''))
+    ))
+}
+
+function buildNginxConfig({ domain, aliases, port, root, proxy }: {
+    domain: string
+    aliases: string[]
+    port: number
+    root?: string
+    proxy?: string
+}) {
+    const serverName = [domain, ...aliases].join(' ')
+    const lines = [
+        'server {',
+        `    listen ${port};`,
+        `    server_name ${serverName};`,
+    ]
+
+    if (root !== undefined) {
+        lines.push(
+            `    root ${root};`,
+            '    index index.html index.htm;',
+            '    location / {',
+            '        try_files $uri $uri/ =404;',
+            '    }',
+        )
+    } else if (proxy !== undefined) {
+        lines.push(
+            '    location / {',
+            `        proxy_pass ${proxy};`,
+            '        proxy_set_header Host $host;',
+            '        proxy_set_header X-Real-IP $remote_addr;',
+            '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
+            '        proxy_set_header X-Forwarded-Proto $scheme;',
+            '    }',
+        )
+    } else {
+        throw new Error('either root or proxy must be set')
+    }
+
+    lines.push('}')
+    return `${lines.join('\n')}\n`
+}
+
+export async function createVirtualHost(input: CreateVhostInput): Promise<Vhost> {
+    const aliases = normalizeAliases(input.aliases)
+
+    const fileName = `${input.domain.replace(/[^a-zA-Z0-9.-]/g, '_')}.conf`
+    const filePath = path.join(SITES_AVAILABLE, fileName)
+
+    await fs.access(filePath).then(() => {
+        throw new Error(`vhost ${input.domain} already exists`)
+    }).catch(error => {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+            throw error
+        }
+    })
+
+    const content = buildNginxConfig({ ...input, aliases })
+    await fs.writeFile(filePath, content, 'utf8')
+
+    const vhost = await Vhost.fromPath(filePath)
+    if (input.enabled) {
+        await vhost.update({ enabled: true })
+    }
+
+    return vhost
+}
 
 export async function getVirtualHosts(): Promise<Vhost[]> {
     if (!checkMainDirExist()) {
