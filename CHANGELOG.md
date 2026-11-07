@@ -9,6 +9,7 @@
 - Display `nginx.service` status(commit [852bd](https://github.com/MathieuRA/nguix/commit/852bd52e735687fa4b6855f3f41bba0eae322e2f))
 - Disable/Enable virtual hosts (commit [af4f6](https://github.com/MathieuRA/nguix/commit/af4f6578b05386e9ffab3aeb8a9a1d91ad0b10ed))
 - Destroy virtual host (PR [#4](https://github.com/MathieuRA/nguix/pull/4))
+- Add virtual host (PRs [#6](https://github.com/MathieuRA/nguix/pull/6), [#7](https://github.com/MathieuRA/nguix/pull/7))
 
 ## Fixes
 
