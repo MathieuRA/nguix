@@ -696,6 +696,40 @@ label input:focus {
   display: none !important;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.label-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.label-text [aria-hidden="true"] {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.required-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.required-note span {
+  color: var(--red);
+  font-weight: 700;
+}
+
 @media (max-width: 720px) {
   .form-grid {
     grid-template-columns: 1fr;

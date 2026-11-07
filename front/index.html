@@ -108,14 +108,26 @@
 
           <form id="vhost-form" onsubmit="submitVhostForm(event)">
             <div class="form-grid">
+              <div class="required-note full-width" aria-live="polite">
+                <span aria-hidden="true">*</span> = required field
+              </div>
+
               <label>
-                <span>Domain</span>
-                <input type="text" name="domain" placeholder="example.com" required />
+                <span class="label-text">
+                  Domain
+                  <span aria-hidden="true">*</span>
+                  <span class="sr-only"> required</span>
+                </span>
+                <input type="text" name="domain" placeholder="example.com" required aria-required="true" />
               </label>
 
               <label>
-                <span>Port</span>
-                <input type="number" name="port" value="80" min="1" max="65535" />
+                <span class="label-text">
+                  Port
+                  <span aria-hidden="true">*</span>
+                  <span class="sr-only"> required</span>
+                </span>
+                <input type="number" name="port" min="1" max="65535" required aria-required="true" />
               </label>
 
               <label class="full-width">
@@ -147,13 +159,21 @@
               </div>
 
               <label class="full-width field-root">
-                <span>Root path</span>
-                <input type="text" name="root" placeholder="/var/www/example.com" />
+                <span class="label-text">
+                  Root path
+                  <span aria-hidden="true">*</span>
+                  <span class="sr-only"> required</span>
+                </span>
+                <input type="text" name="root" placeholder="/var/www/example.com" required aria-required="true" />
               </label>
 
               <label class="full-width field-proxy hidden">
-                <span>Proxy target</span>
-                <input type="text" name="proxy" placeholder="http://127.0.0.1:3000" />
+                <span class="label-text">
+                  Proxy target
+                  <span aria-hidden="true">*</span>
+                  <span class="sr-only"> required</span>
+                </span>
+                <input type="text" name="proxy" placeholder="http://127.0.0.1:3000" required aria-required="true" />
               </label>
 
               <label class="checkbox-row full-width">

@@ -190,15 +190,19 @@ function updateVhostModeUI() {
     rootField.classList.add('hidden')
     proxyField.classList.remove('hidden')
     rootInput.disabled = true
+    rootInput.required = false
     rootInput.value = ''
     proxyInput.disabled = false
+    proxyInput.required = true
     proxyInput.focus()
   } else {
     proxyField.classList.add('hidden')
     rootField.classList.remove('hidden')
     proxyInput.disabled = true
+    proxyInput.required = false
     proxyInput.value = ''
     rootInput.disabled = false
+    rootInput.required = true
     rootInput.focus()
   }
 }
@@ -223,7 +227,7 @@ function closeVhostModal() {
   drawer.classList.add('hidden')
   drawer.setAttribute('aria-hidden', 'true')
   document.getElementById('vhost-form').reset()
-  document.querySelector('#vhost-form input[name="port"]').value = 80
+  document.querySelector('#vhost-form input[name="port"]').value = ''
   document.querySelector('#vhost-form input[name="enabled"]').checked = true
   document.querySelector('input[name="mode"][value="static"]').checked = true
   updateVhostModeUI()
@@ -238,7 +242,7 @@ async function submitVhostForm(event) {
   const payload = {
     domain: (formData.get('domain') ?? '').toString().trim(),
     aliases: (formData.get('aliases') ?? '').toString().split(',').map(value => value.trim()).filter(Boolean),
-    port: Number(formData.get('port') ?? 80),
+    port: Number(formData.get('port')),
     enabled: formData.get('enabled') === 'on',
     root: mode === 'static' ? ((formData.get('root') ?? '').toString().trim() || undefined) : undefined,
     proxy: mode === 'proxy' ? ((formData.get('proxy') ?? '').toString().trim() || undefined) : undefined,
@@ -246,6 +250,11 @@ async function submitVhostForm(event) {
 
   if (!payload.domain) {
     alert('Domain is required')
+    return
+  }
+
+  if (!Number.isInteger(payload.port) || payload.port < 1 || payload.port > 65535) {
+    alert('Port is required and must be valid between 1 and 65535')
     return
   }
 
