@@ -173,5 +173,109 @@ function updateThemeIcon() {
   render();
 })();
 
+function updateVhostModeUI() {
+  const selectedMode = document.querySelector('input[name="mode"]:checked')?.value ?? 'static'
+  const rootField = document.querySelector('.field-root')
+  const proxyField = document.querySelector('.field-proxy')
+  const rootInput = document.querySelector('input[name="root"]')
+  const proxyInput = document.querySelector('input[name="proxy"]')
+  const optionPills = document.querySelectorAll('.option-pill')
 
-// TODO: split this file to have a better structure. Create a small react-like framework to correctly handle renders?
+  optionPills.forEach((pill) => {
+    const input = pill.querySelector('input[type="radio"]')
+    pill.classList.toggle('active', input.checked)
+  })
+
+  if (selectedMode === 'proxy') {
+    rootField.classList.add('hidden')
+    proxyField.classList.remove('hidden')
+    rootInput.disabled = true
+    rootInput.value = ''
+    proxyInput.disabled = false
+    proxyInput.focus()
+  } else {
+    proxyField.classList.add('hidden')
+    rootField.classList.remove('hidden')
+    proxyInput.disabled = true
+    proxyInput.value = ''
+    rootInput.disabled = false
+    rootInput.focus()
+  }
+}
+
+function bindVhostModeControls() {
+  document.querySelectorAll('input[name="mode"]').forEach((radio) => {
+    radio.addEventListener('change', updateVhostModeUI)
+  })
+}
+
+function openVhostModal() {
+  const drawer = document.getElementById('vhost-drawer')
+  drawer.classList.remove('hidden')
+  drawer.setAttribute('aria-hidden', 'false')
+  updateVhostModeUI()
+  const firstInput = document.querySelector('#vhost-form input[name="domain"]')
+  firstInput.focus()
+}
+
+function closeVhostModal() {
+  const drawer = document.getElementById('vhost-drawer')
+  drawer.classList.add('hidden')
+  drawer.setAttribute('aria-hidden', 'true')
+  document.getElementById('vhost-form').reset()
+  document.querySelector('#vhost-form input[name="port"]').value = 80
+  document.querySelector('#vhost-form input[name="enabled"]').checked = true
+  document.querySelector('input[name="mode"][value="static"]').checked = true
+  updateVhostModeUI()
+}
+
+async function submitVhostForm(event) {
+  event.preventDefault()
+
+  const form = event.currentTarget
+  const formData = new FormData(form)
+  const mode = formData.get('mode') ?? 'static'
+  const payload = {
+    domain: (formData.get('domain') ?? '').toString().trim(),
+    aliases: (formData.get('aliases') ?? '').toString().split(',').map(value => value.trim()).filter(Boolean),
+    port: Number(formData.get('port') ?? 80),
+    enabled: formData.get('enabled') === 'on',
+    root: mode === 'static' ? ((formData.get('root') ?? '').toString().trim() || undefined) : undefined,
+    proxy: mode === 'proxy' ? ((formData.get('proxy') ?? '').toString().trim() || undefined) : undefined,
+  }
+
+  if (!payload.domain) {
+    alert('Domain is required')
+    return
+  }
+
+  if (mode === 'static' && !payload.root) {
+    alert('Root path is required for a static site')
+    return
+  }
+
+  if (mode === 'proxy' && !payload.proxy) {
+    alert('Proxy target is required for a proxy app')
+    return
+  }
+
+  const response = await fetch('/vhosts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}))
+    alert(body.message || 'Unable to create the virtual host')
+    return
+  }
+
+  closeVhostModal()
+  await renderVhosts({ bypassCache: true })
+}
+
+(function () {
+  bindVhostModeControls()
+  updateVhostModeUI()
+})();

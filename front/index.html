@@ -78,7 +78,7 @@
           <h2>Virtual Hosts</h2>
           <p>Manage your nginx server blocks</p>
         </div>
-        <button class="btn btn-primary" onclick="alert('Coming soon')">
+        <button class="btn btn-primary" onclick="openVhostModal()">
           <svg
             width="13"
             height="13"
@@ -92,6 +92,82 @@
           </svg>
           Add virtual host
         </button>
+      </div>
+
+      <div id="vhost-drawer" class="drawer-overlay hidden" aria-hidden="true">
+        <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="vhost-drawer-title">
+          <div class="drawer-header">
+            <div>
+              <p class="drawer-kicker">New server block</p>
+              <h3 id="vhost-drawer-title">Add virtual host</h3>
+            </div>
+            <button class="icon-btn" type="button" onclick="closeVhostModal()" aria-label="Close dialog">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <form id="vhost-form" onsubmit="submitVhostForm(event)">
+            <div class="form-grid">
+              <label>
+                <span>Domain</span>
+                <input type="text" name="domain" placeholder="example.com" required />
+              </label>
+
+              <label>
+                <span>Port</span>
+                <input type="number" name="port" value="80" min="1" max="65535" />
+              </label>
+
+              <label class="full-width">
+                <span>Aliases</span>
+                <input type="text" name="aliases" placeholder="www.example.com, admin.example.com" />
+              </label>
+
+              <label class="full-width">
+                <span>Type</span>
+                <div class="segmented-control" role="radiogroup" aria-label="Virtual host type">
+                  <label class="option-pill active">
+                    <input type="radio" name="mode" value="static" checked />
+                    <span class="option-text">Static site</span>
+                  </label>
+                  <label class="option-pill">
+                    <input type="radio" name="mode" value="proxy" />
+                    <span class="option-text">Proxy / app</span>
+                  </label>
+                </div>
+              </label>
+
+              <div class="mode-help full-width">
+                <small>
+                  <strong>Static site:</strong> nginx serves files stored on disk.
+                </small>
+                <small>
+                  <strong>Proxy / app:</strong> nginx forwards requests to a backend service.
+                </small>
+              </div>
+
+              <label class="full-width field-root">
+                <span>Root path</span>
+                <input type="text" name="root" placeholder="/var/www/example.com" />
+              </label>
+
+              <label class="full-width field-proxy hidden">
+                <span>Proxy target</span>
+                <input type="text" name="proxy" placeholder="http://127.0.0.1:3000" />
+              </label>
+
+              <label class="checkbox-row full-width">
+                <input type="checkbox" name="enabled" checked />
+                <span>Enable immediately</span>
+              </label>
+            </div>
+
+            <div class="drawer-actions">
+              <button type="button" class="btn btn-ghost" onclick="closeVhostModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create virtual host</button>
+            </div>
+          </form>
+        </aside>
       </div>
 
       <div id="container" class="loader">
