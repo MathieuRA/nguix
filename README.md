@@ -11,7 +11,7 @@ Browse, enable, disable and delete your server blocks from a clean interface —
 
 - List all virtual hosts from `sites-available`
 - See which ones are enabled, their port, SSL status and proxy target
-- Enable / disable / delete vhosts
+- Enable / disable / delete / create vhosts
 - Light and dark theme
 - **Zero runtime dependencies** — only dev dependencies for type checking
 
